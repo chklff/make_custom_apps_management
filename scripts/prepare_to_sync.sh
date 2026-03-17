@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# scripts/setup_destination_make_apps.sh  (Bash 3.2+ compatible)
+# scripts/prepare_to_sync.sh  (Bash 3.2+ compatible)
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -11,7 +11,7 @@ fi
 
 usage() {
   cat <<'EOF'
-Usage: bash scripts/setup_destination_make_apps.sh [--no-api]
+Usage: bash scripts/prepare_to_sync.sh [--no-api]
 
 Reads .env for:
   - destination_API_KEY

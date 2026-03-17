@@ -1,103 +1,173 @@
-# Scripts Manual
+# Quick Start
 
-This folder contains Bash helpers for preparing and inspecting Make app sync data.
+This repo is meant to be your local workspace for Make custom apps.
 
-## Files In This Folder
+Use it like this:
 
-### `prepare_to_sync.sh`
+1. Clone this repo.
+2. Open it in VS Code.
+3. Use the Make custom apps VS Code extension from inside this repo.
+4. Export apps into the repo `src/` folder.
+5. Prepare destination app IDs with the scripts in this folder.
+6. Deploy from the VS Code extension.
 
-Recommended script for real sync preparation.
+Loom reference:
 
-What it does:
+- <https://loom.com/share/d493400edde04220923b2d0dc4f6298e>
 
-- Reads `destination_API_KEY` and `destination_Base_URL` from the repo root `.env`.
-- Writes the destination API key into `.secrets/destination_apikey`.
-- Finds every `makecomapp.json` under the repo.
-- Fetches existing apps from the destination Make environment.
-- For each `makecomapp.json`:
-  - skips the file if the destination origin already exists
-  - tries to reuse an existing remote app by `appId`
-  - otherwise tries to reuse a remote app by label
-  - otherwise creates a new remote app
-  - appends the destination origin as the last item in `origins`
+## Repo Layout
 
-When to use it:
+- `src/` contains one folder per exported custom app
+- `scripts/` contains helper scripts for destination prep
+- `.env` stores destination connection values for the scripts
+- `.secrets/` stores API key files referenced by `makecomapp.json`
 
-- Use this first if you want to avoid creating duplicate apps on the destination.
+Typical structure:
 
-### `list_destination_apps.sh`
+```text
+oemapps/
+  src/
+    docusign/
+      makecomapp.json
+    emporix/
+      makecomapp.json
+  scripts/
+  .env
+  .secrets/
+```
 
-Read-only inspection script.
+## Prerequisites
 
-What it does:
+- VS Code installed
+- Make custom apps VS Code extension installed
+- `bash`, `curl`, and `jq` available locally
+- a valid destination Make API key
 
-- Reads destination credentials from `.env`.
-- Calls the destination Make API with pagination.
-- Prints every app name, label, and version.
-- Prints the total number of apps found.
-
-When to use it:
-
-- Use this before sync to see what already exists on the destination.
-
-## Requirements
-
-- Run commands from the repo root folder
-- Bash available on the machine
-- `curl` installed
-- `jq` installed
-- A valid `.env` file in the repo root
-
-Expected `.env` values:
+Your `.env` should contain:
 
 ```bash
 destination_API_KEY=your-token
 destination_Base_URL=https://us1.make.com/api
 ```
 
-There is also an example file at .env.sample 
+Example file:
 
-## How To Run
+- [.env.sample](/Users/o.chekalov/Desktop/oemapps/.env.sample)
 
-Run from the repo root:
+## Open The Repo In VS Code
 
+Clone the repo and open the repo root in VS Code:
 
-### 1. Inspect destination apps
+```bash
+git clone <your-repo-url>
+cd oemapps
+code .
+```
+
+The important part is that VS Code is opened on this repo root, not on some random export folder.
+
+## Connect In The Extension
+
+Inside VS Code:
+
+- open the Make custom apps extension
+- create a connection to the source instance
+- create a connection to the destination instance
+- provide the instance URL and API key for each connection
+
+The extension handles source and destination connections.
+
+The local scripts only use the destination values from `.env`.
+
+## Export Apps Into `src/`
+
+When you clone or export a custom app from the extension, use this repo as the local workspace.
+
+Important rule:
+
+- choose the repo `src/` folder as the export target
+
+That way, each app is created inside this repo as:
+
+```text
+src/<app-folder>/
+```
+
+Example:
+
+```text
+src/docusign/
+src/emporix/
+```
+
+Each exported app folder should contain a `makecomapp.json`.
+
+The folder name matters because the prep scripts derive the destination origin `label` from that folder name.
+
+If you are re-exporting an app:
+
+- remove the old export first if you want a clean folder
+- avoid mixing files from different exports in the same app folder
+
+## Prepare The Destination
+
+Run all script commands from the repo root:
+
+```bash
+cd /Users/o.chekalov/Desktop/oemapps
+```
+
+### 1. Check what already exists on destination
 
 ```bash
 bash scripts/list_destination_apps.sh
 ```
 
-Use this to verify connectivity and see whether apps already exist.
+This lists destination apps so you can see whether the app already exists.
 
-### 2. Prepare sync safely
+### 2. Prepare `makecomapp.json` files
+
+Recommended command:
 
 ```bash
 bash scripts/prepare_to_sync.sh
 ```
 
-This is the safer default because it reuses destination apps when possible.
+This script:
 
-Dry mode without API creation:
+- reads `.env`
+- writes `.secrets/destination_apikey`
+- scans all `makecomapp.json` files
+- tries to reuse an existing destination app by `appId` or label
+- creates a destination app if needed
+- appends the destination origin as the last item in `origins`
+
+The destination app does not need to exist in advance.
+
+If needed, run a dry mode without API creation:
 
 ```bash
 bash scripts/prepare_to_sync.sh --no-api
 ```
 
-In `--no-api` mode, the script still writes the destination origin, but leaves:
+### 3. Optional simpler flow
 
-- `appId` as an empty string
-- `appVersion` as `1`
+There is also:
 
+```bash
+bash scripts/setup_destination_make_apps.sh
+```
 
-## What Gets Written
+Use this only if you want the simpler script and do not need the reuse logic from `prepare_to_sync.sh`.
 
-Scripts create or update:
+## What The Script Writes
+
+The scripts update:
 
 - `.secrets/destination_apikey`
-- every discovered `makecomapp.json`
+- each exported app’s `makecomapp.json`
 
-The destination origin written into each `makecomapp.json` looks like:
+The destination origin written into `makecomapp.json` looks like:
 
 ```json
 {
@@ -109,39 +179,59 @@ The destination origin written into each `makecomapp.json` looks like:
 }
 ```
 
-The exact `apikeyFile` path is calculated relative to the folder containing that `makecomapp.json`.
+After running the prep script, review the generated values:
 
-## Recommended Order
+- `appId`
+- `baseUrl`
+- `appVersion`
+- `apikeyFile`
 
-1. Check `.env`
-2. Run `bash scripts/list_destination_apps.sh`
-3. Run `bash scripts/prepare_to_sync.sh`
-4. Inspect updated `src/*/makecomapp.json` files
+## Deploy From VS Code
+
+Once the exported app files and `makecomapp.json` look correct:
+
+- go back to the VS Code extension
+- use the deploy action
+- choose the destination connection
+- push the local app from this repo to Make
+
+## Recommended Flow
+
+1. Clone this repo.
+2. Open the repo in VS Code.
+3. Connect source and destination in the extension.
+4. Export each app into `src/`.
+5. Fill `.env`.
+6. Run `bash scripts/list_destination_apps.sh`.
+7. Run `bash scripts/prepare_to_sync.sh`.
+8. Review `src/*/makecomapp.json`.
+9. Deploy from the VS Code extension.
+10. Test in the destination Make instance.
 
 ## Troubleshooting
+
+If `zsh` says `command not found`:
+
+- run scripts with `bash scripts/<name>.sh`
+- or mark them executable and use `./scripts/<name>.sh`
 
 If a script says `.env` is missing:
 
 - run it from the repo root
-- confirm `.env` exists
-
-If `zsh` says `command not found`:
-
-- run the script with `bash scripts/<name>.sh`
-- or mark it executable and run it as `./scripts/<name>.sh`
+- confirm [.env](/Users/o.chekalov/Desktop/oemapps/.env) exists
 
 If the API call fails:
 
 - verify `destination_API_KEY`
 - verify `destination_Base_URL`
-- verify the Make zone in the URL such as `us1`, `eu1`, or `eu2`
+- verify the Make zone such as `us1`, `us2`, `eu1`, or `eu2`
+
+If the wrong destination app was selected:
+
+- compare the generated `appId` with the output of `bash scripts/list_destination_apps.sh`
+- correct the `appId` in `makecomapp.json` before deployment
 
 If `jq` is missing:
 
-- install `jq` first, then rerun the script
-
-## Short Guidance
-
-- Prefer `prepare_to_sync.sh` for normal use.
-- Use `list_destination_apps.sh` to inspect the destination first.
-- Use `setup_destination_make_apps.sh` only when you want the simpler direct-create behavior.
+- install `jq`
+- rerun the script
