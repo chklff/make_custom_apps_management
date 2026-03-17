@@ -25,7 +25,7 @@ Loom reference:
 Typical structure:
 
 ```text
-oemapps/
+myapps_folder/
   src/
     docusign/
       makecomapp.json
@@ -52,7 +52,7 @@ destination_Base_URL=https://us1.make.com/api
 
 Example file:
 
-- [.env.sample](/Users/o.chekalov/Desktop/oemapps/.env.sample)
+- [.env.sample](/.env.sample)
 
 ## Open The Repo In VS Code
 
@@ -60,7 +60,7 @@ Clone the repo and open the repo root in VS Code:
 
 ```bash
 git clone <your-repo-url>
-cd oemapps
+cd  <foldername>
 code .
 ```
 
@@ -114,7 +114,7 @@ If you are re-exporting an app:
 Run all script commands from the repo root:
 
 ```bash
-cd /Users/o.chekalov/Desktop/oemapps
+cd 
 ```
 
 ### 1. Check what already exists on destination
@@ -218,7 +218,7 @@ If `zsh` says `command not found`:
 If a script says `.env` is missing:
 
 - run it from the repo root
-- confirm [.env](/Users/o.chekalov/Desktop/oemapps/.env) exists
+- confirm [.env](/.env) exists
 
 If the API call fails:
 
