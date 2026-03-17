@@ -1,0 +1,5 @@
+.secrets
+.env
+/src
+.DS_Store
+setup_destination_make_apps.sh
